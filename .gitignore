@@ -260,5 +260,6 @@ next-env.d.ts
 
 # temporary mp3 files
 uploads/
+.claude
 
 !frontend/lib/
