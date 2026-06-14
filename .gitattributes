@@ -5,3 +5,4 @@
 
 # Exclude frontend and backend (Node.js/HTML/CSS/JS) from GitHub language stats
 frontend/** linguist-vendored
+backend/**  linguist-vendored

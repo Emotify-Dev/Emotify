@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emotify — Connect Spotify</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body data-page="login">
+
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="/" class="logo">Emotify</a>
+
+      <div class="header-right">
+        <!-- No connect button on login page (guest) -->
+
+        <!-- Auth: nav links -->
+        <nav class="header-nav" data-auth>
+          <a href="#">Dashboard</a>
+          <a href="/history">History</a>
+          <a href="#">Calendar</a>
+          <a href="#">Settings</a>
+        </nav>
+
+        <!-- Auth: logged-in badge -->
+        <button class="btn-logged-in" data-auth>
+          <span class="logged-in-label">Logged in as Mirya</span>
+          <img class="avatar-sm dynamic-avatar" src="/images/Spotify_Profile_Avatar.png" alt="Mirya">
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== MAIN AREA ===== -->
+  <main class="login-bg">
+
+    <!-- ===== NOT LOGGED IN CARD ===== -->
+    <div class="login-card" id="connect-card">
+      <div class="sp-circle">
+        <img src="/images/Spotify_Logo.png" alt="Spotify">
+      </div>
+
+      <h2>Connect your Spotify account</h2>
+      <p class="sub-desc">
+        We need read-only access to your listening history and currently playing track.
+      </p>
+
+      <!-- WE READ -->
+      <div class="perm-section">
+        <p class="perm-label green">We Read</p>
+
+        <div class="perm-item">
+          <span class="perm-icon check">✓</span>
+          Read your recently played tracks
+        </div>
+        <div class="perm-item">
+          <span class="perm-icon check">✓</span>
+          Read your currently playing track
+        </div>
+        <div class="perm-item">
+          <span class="perm-icon check">✓</span>
+          Read your playlists (names only)
+        </div>
+        <div class="perm-item">
+          <span class="perm-icon check">✓</span>
+          Read playback state (device, shuffle, repeat)
+        </div>
+      </div>
+
+      <hr class="perm-divider">
+
+      <!-- WE NEVER ACCESS -->
+      <div class="perm-section">
+        <p class="perm-label red">We Never Access</p>
+
+        <div class="perm-item">
+          <span class="perm-icon x">✕</span>
+          Your payment information
+        </div>
+        <div class="perm-item">
+          <span class="perm-icon x">✕</span>
+          Private messages
+        </div>
+        <div class="perm-item">
+          <span class="perm-icon x">✕</span>
+          Ability to play or modify your library
+        </div>
+      </div>
+
+      <button class="btn-spotify-block" id="btn-connect-spotify">
+        Connect Spotify
+      </button>
+    </div>
+
+    <!-- ===== LOGGED IN / CONNECTED CARD ===== -->
+    <div class="login-card hidden" id="connected-card">
+      <div class="check-outer">
+        <div class="check-inner">
+          <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7 14.5L11.5 19L21 9" stroke="#1a1a1a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <h2>Spotify connected!</h2>
+      <p class="connected-desc welcome-text">Welcome, Mirya. Let's set up your mood profile.</p>
+
+      <div class="user-info-box">
+        <img class="user-avatar dynamic-avatar" src="/images/Spotify_Profile_Avatar.png" alt="Mirya">
+        <div class="user-meta">
+          <h4 class="dynamic-name">Mirya</h4>
+          <p class="last-login dynamic-login-time">Last login: —</p>
+          <span class="spotify-badge">
+            <img src="/images/Spotify_Logo.png" alt="">
+            Spotify
+          </span>
+        </div>
+      </div>
+
+      <hr class="perm-divider-sm">
+
+      <div class="connected-actions">
+        <button class="btn-logout" id="btn-logout">Log out</button>
+        <a href="/" class="btn-continue">Continue to Setup →</a>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer>
+    <div class="footer-top">
+      <span class="footer-copyright">© 2026 Emotify</span>
+      <nav class="footer-links">
+        <a href="#">About</a>
+        <a href="#">How it works</a>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Use</a>
+      </nav>
+      <div class="footer-contact">
+        <a href="#">GitHub</a>
+        <a href="mailto:hello@emotify.app">hello@emotify.app</a>
+      </div>
+    </div>
+    <hr class="footer-divider">
+    <p class="footer-disclaimer">Emotify is a mood companion tool, not a clinical mental health service.</p>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

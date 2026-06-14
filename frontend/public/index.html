@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emotify — See what your music says about your mood</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body data-page="main">
+
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="/" class="logo">Emotify</a>
+
+      <div class="header-right">
+        <!-- Guest: connect button (main page only) -->
+        <button class="btn-spotify btn-go-login" data-main-guest>
+          <img class="sp-icon" src="/images/Spotify_Logo.png" alt="">
+          Connect with Spotify
+        </button>
+
+        <!-- Auth: nav links -->
+        <nav class="header-nav" data-auth>
+          <a href="#">Dashboard</a>
+          <a href="/history">History</a>
+          <a href="#">Calendar</a>
+          <a href="#">Settings</a>
+        </nav>
+
+        <!-- Auth: logged-in badge -->
+        <button class="btn-logged-in" data-auth>
+          <span class="logged-in-label">Logged in as Mirya</span>
+          <img class="avatar-sm dynamic-avatar" src="/images/Spotify_Profile_Avatar.png" alt="Mirya">
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+    <div class="hero-blobs">
+      <div class="blob blob-pink"></div>
+      <div class="blob blob-blue"></div>
+      <div class="blob blob-yellow"></div>
+      <div class="blob blob-green"></div>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-badge">
+        Test Prototype of Emotify<br>
+        Made by Myroslav Natalchenko
+      </div>
+
+      <h1>See what your music says&nbsp;about your mood</h1>
+
+      <p class="hero-desc">
+        Emotify tracks your Spotify listening and shows mood patterns over time —
+        so you can notice changes before you even realize they're happening.
+      </p>
+
+      <!-- Guest only: CTA buttons -->
+      <div class="hero-buttons" data-main-guest>
+        <button class="btn-spotify-lg btn-go-login">
+          <img class="sp-icon" src="/images/Spotify_Logo.png" alt="">
+          Connect with Spotify
+        </button>
+        <a href="#how-it-works" class="btn-outline" id="btn-learn">
+          Learn how it works →
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== HOW IT WORKS ===== -->
+  <section class="how-it-works" id="how-it-works">
+    <h2 class="section-title">How it works</h2>
+
+    <div class="cards-row">
+      <!-- Connect -->
+      <div class="card-how">
+        <div class="card-icon green">
+          <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="10" cy="10" r="7" stroke="#fff" stroke-width="1.8"/>
+            <path d="M7 10c0-1.65 1.35-3 3-3m3 3c0 1.65-1.35 3-3 3" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M8.5 8c0-.83.67-1.5 1.5-1.5m1.5 5.5c0 .83-.67 1.5-1.5 1.5" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h3>Connect</h3>
+        <p>Link your Spotify in one click. Just listen to music as usual. Emotify does the rest.</p>
+      </div>
+
+      <!-- Analyze -->
+      <div class="card-how">
+        <div class="card-icon yellow">
+          <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="12" width="3" height="5" rx="1" fill="#fff"/>
+            <rect x="8.5" y="8" width="3" height="9" rx="1" fill="#fff"/>
+            <rect x="14" y="5" width="3" height="12" rx="1" fill="#fff"/>
+          </svg>
+        </div>
+        <h3>Analyze</h3>
+        <p>Each track gets mapped to a mood: Joy, Anger, Sadness, or Pleasure based on its acoustic character.</p>
+      </div>
+
+      <!-- Discover -->
+      <div class="card-how">
+        <div class="card-icon blue">
+          <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="10" cy="10" r="3.5" stroke="#fff" stroke-width="1.8"/>
+            <path d="M10 4v1.5M10 14.5V16M4 10h1.5M14.5 10H16" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h3>Discover</h3>
+        <p>See how your listening shifts day to day. Spot patterns. Understand yourself a little better.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOUR MOODS ===== -->
+  <section class="moods">
+    <h2 class="section-title">Four emotional moods</h2>
+
+    <div class="mood-grid">
+      <!-- Row 0: column headers -->
+      <div class="mood-empty"></div>
+      <div class="mood-axis-col">High Energy</div>
+      <div class="mood-axis-col">Low Energy</div>
+
+      <!-- Row 1: Positive -->
+      <div class="mood-row-label">Positive</div>
+      <div class="mood-card joy">
+        <h4>Joy</h4>
+        <p>Upbeat, energetic, happy music</p>
+      </div>
+      <div class="mood-card pleasure">
+        <h4>Pleasure</h4>
+        <p>Calm, relaxing, content music</p>
+      </div>
+
+      <!-- Row 2: Negative -->
+      <div class="mood-row-label">Negative</div>
+      <div class="mood-card anger">
+        <h4>Anger</h4>
+        <p>Intense, aggressive, powerful music</p>
+      </div>
+      <div class="mood-card sadness">
+        <h4>Sadness</h4>
+        <p>Melancholic, slow, reflective music</p>
+      </div>
+    </div>
+
+    <p class="mood-footnote">These moods describe the music itself — not a diagnosis of how you feel.</p>
+  </section>
+
+  <!-- ===== DARK BANNER ===== -->
+  <div class="dark-banner">
+    <p>
+      Music is personal. If a prediction feels off, you can always correct it
+      — and the system learns your taste over time.
+    </p>
+  </div>
+
+  <!-- ===== YOUR DATA ===== -->
+  <section class="data-control">
+    <h2 class="section-title">Your data, your control</h2>
+
+    <div class="data-cols">
+      <div class="data-item">
+        <div class="dot-green">
+          <svg viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <p>We never sell your data.</p>
+      </div>
+      <div class="data-item">
+        <div class="dot-green">
+          <svg viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <p>Spotify data is used only as behavioral context filters, not for ML training (per Spotify API terms).</p>
+      </div>
+      <div class="data-item">
+        <div class="dot-green">
+          <svg viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <p>You can delete your account and all data at any time.</p>
+      </div>
+    </div>
+
+    <a href="#" class="privacy-link">Read our Privacy Policy →</a>
+  </section>
+
+  <!-- ===== CTA (guest only) ===== -->
+  <section class="cta" data-main-guest>
+    <h2>Curious what your listening says about you?</h2>
+    <button class="btn-spotify-lg btn-go-login">
+      <img class="sp-icon" src="/images/Spotify_Logo.png" alt="">
+      Connect with Spotify
+    </button>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer>
+    <div class="footer-top">
+      <span class="footer-copyright">© 2026 Emotify</span>
+      <nav class="footer-links">
+        <a href="#">About</a>
+        <a href="#">How it works</a>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Use</a>
+      </nav>
+      <div class="footer-contact">
+        <a href="#">GitHub</a>
+        <a href="mailto:hello@emotify.app">hello@emotify.app</a>
+      </div>
+    </div>
+    <hr class="footer-divider">
+    <p class="footer-disclaimer">Emotify is a mood companion tool, not a clinical mental health service.</p>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

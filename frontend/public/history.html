@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emotify — Listening History</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body data-page="history">
+
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="/" class="logo">Emotify</a>
+      <div class="header-right">
+        <nav class="header-nav">
+          <a href="#">Dashboard</a>
+          <a href="/history" style="color:#1a1a1a; font-weight:700;">History</a>
+          <a href="#">Calendar</a>
+          <a href="#">Settings</a>
+        </nav>
+        <button class="btn-logged-in">
+          <span class="logged-in-label">Logged in as Mirya</span>
+          <img class="avatar-sm dynamic-avatar" src="/images/Spotify_Profile_Avatar.png" alt="Mirya">
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== MAIN ===== -->
+  <main class="history-main">
+
+    <!-- Top bar -->
+    <div class="history-top">
+      <div>
+        <h1>Listening History</h1>
+        <p>All tracks Emotify has detected from your Spotify activity</p>
+      </div>
+      <button class="btn-export" id="btn-export">↓ Export CSV</button>
+    </div>
+
+    <!-- Filters -->
+    <div class="history-filters">
+      <div class="filter-row">
+        <div class="time-btns">
+          <button class="time-btn" data-range="today">Today</button>
+          <button class="time-btn active" data-range="7">Last 7 days</button>
+          <button class="time-btn" data-range="30">Last 30 days</button>
+          <button class="time-btn" data-range="all">All time</button>
+        </div>
+        <div class="search-sort">
+          <input class="search-input" id="search-input" type="text" placeholder="Search track or artist…">
+          <select class="sort-select" id="sort-select">
+            <option value="recent">Sort: Most recent</option>
+            <option value="oldest">Sort: Oldest first</option>
+          </select>
+        </div>
+      </div>
+      <div class="filter-row mood-filter-row">
+        <div class="mood-btns">
+          <label>Mood:</label>
+          <button class="mood-filter-btn active" data-mood="all">All</button>
+          <button class="mood-filter-btn" data-mood="joy">Joy</button>
+          <button class="mood-filter-btn" data-mood="anger">Anger</button>
+          <button class="mood-filter-btn" data-mood="sadness">Sadness</button>
+          <button class="mood-filter-btn" data-mood="pleasure">Pleasure</button>
+          <button class="mood-filter-btn" data-mood="undefined">Uncertain</button>
+        </div>
+        <button class="clear-filters-btn" id="clear-filters">Clear filters</button>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="tracks-table" id="tracks-table">
+      <div class="table-head">
+        <span>#</span>
+        <span>Title</span>
+        <span>Artist</span>
+        <span>Played at</span>
+        <span>Mood</span>
+        <span>Confidence</span>
+        <span>Correction</span>
+      </div>
+      <div id="tracks-body">
+        <div class="history-loading">
+          <div class="history-spinner"></div>
+          Loading your listening history…
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer row -->
+    <div class="history-footer">
+      <span class="showing-count" id="showing-count"></span>
+      <div class="pagination" id="pagination"></div>
+    </div>
+
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer>
+    <div class="footer-top">
+      <span class="footer-copyright">© 2026 Emotify</span>
+      <nav class="footer-links">
+        <a href="#">About</a>
+        <a href="#">How it works</a>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Use</a>
+      </nav>
+      <div class="footer-contact">
+        <a href="#">GitHub</a>
+        <a href="mailto:hello@emotify.app">hello@emotify.app</a>
+      </div>
+    </div>
+    <hr class="footer-divider">
+    <p class="footer-disclaimer">Emotify is a mood companion tool, not a clinical mental health service.</p>
+  </footer>
+
+  <script src="/app.js"></script>
+  <script src="/history.js"></script>
+</body>
+</html>
