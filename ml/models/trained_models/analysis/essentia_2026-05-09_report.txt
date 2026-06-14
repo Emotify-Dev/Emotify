@@ -1,0 +1,17 @@
+Source    : essentia
+Date      : 2026-05-09
+Best epoch: 3
+Val loss  : 0.436391
+Test loss : 0.468601
+Test acc  : 0.862637
+
+              precision    recall  f1-score   support
+
+         Joy     0.9871    0.8511    0.9141      2344
+       Anger     0.1519    0.9271    0.2610        96
+    Pleasure     0.0165    0.2857    0.0312         7
+     Sadness     0.9960    0.8735    0.9308      2285
+
+    accuracy                         0.8626      4732
+   macro avg     0.5379    0.7344    0.5343      4732
+weighted avg     0.9730    0.8626    0.9076      4732
