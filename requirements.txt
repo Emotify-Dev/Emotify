@@ -1,0 +1,20 @@
+# Flask backend
+flask
+flask-cors
+flask-limiter
+flask-sqlalchemy
+werkzeug
+python-dotenv
+spotipy
+requests
+
+# ML inference
+torch
+numpy
+pandas
+librosa
+transformers
+
+# Training & dataset preparation
+scikit-learn
+tqdm
