@@ -1,0 +1,4 @@
+*.pb filter=lfs diff=lfs merge=lfs -text
+
+# Exclude frontend and backend (Node.js/HTML/CSS/JS) from GitHub language stats
+frontend/** linguist-vendored
