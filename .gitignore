@@ -7,6 +7,9 @@
 # DS_Store
 .DS_Store
 
+#DB
+ml/analysis_cache.db
+
 # folder_for_tests_if_everything_works_fine
 audio_test/
 

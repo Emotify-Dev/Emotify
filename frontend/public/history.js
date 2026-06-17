@@ -1,16 +1,20 @@
 // ── Constants ─────────────────────────────────────────────────
 const PER_PAGE = 20;
-const MOODS = ['Joy', 'Anger', 'Sadness', 'Pleasure'];
+const MOODS    = ['Joy', 'Anger', 'Sadness', 'Pleasure'];
+const ML_API   = 'http://localhost:5001';
 
 // ── State ──────────────────────────────────────────────────────
-let allTracks    = [];   // raw items from Spotify
-let filtered     = [];   // after filter/search
-let currentPage  = 1;
-let corrections  = {};   // { trackId: 'Joy' | null }
-let openRow      = null; // currently expanded track id
-let activeMood   = 'all';
-let activeRange  = '7';
-let searchQuery  = '';
+let allTracks   = [];   // raw items from Spotify
+let filtered    = [];   // after filter/search
+let currentPage = 1;
+let corrections = {};   // { trackId: 'joy' | ... }
+let openRow     = null; // currently expanded track id
+let activeMood  = 'all';
+let activeRange = '7';
+let searchQuery = '';
+
+let analysisCache = {};      // trackId → {mood, confidence, scores} | {error}
+let analyzingSet  = new Set(); // track IDs currently in-flight
 
 // ── Guard: redirect if not logged in ─────────────────────────
 function guardAuth() {
@@ -46,68 +50,25 @@ async function loadHistory() {
   }
 }
 
-// Fetches recently-played tracks via cursor pagination (50 per page).
-// If Spotify returns fewer than TARGET tracks, repeats existing ones with
-// shifted timestamps so the UI can be tested with a realistic dataset.
+// Fetches recently-played tracks via Spotify cursor pagination.
+// Spotify stores up to ~50 recent plays — follows next-cursors to collect all available.
 async function fetchAllPages(token) {
-  const TARGET  = 300;
   const headers = { Authorization: `Bearer ${token}` };
   let url   = 'https://api.spotify.com/v1/me/player/recently-played?limit=50';
   let items = [];
-  let page  = 0;
 
-  while (items.length < TARGET) {
-    updateLoadingMessage(items.length);
-
+  while (url) {
     const res = await fetch(url, { headers });
 
     if (res.status === 401) throw Object.assign(new Error('401'), { is401: true });
     if (!res.ok) throw new Error(`Spotify API error ${res.status}`);
 
     const data = await res.json();
-    const batch = data.items || [];
-    items = items.concat(batch);
-    page++;
-
-    console.log(`[History] page ${page}: +${batch.length} tracks, next=${data.next ? 'yes' : 'null'}, total=${items.length}`);
-
-    if (!data.next) {
-      // Spotify has no more pages — fill remainder with shifted copies for testing
-      if (items.length < TARGET && items.length > 0) {
-        console.log(`[History] Spotify returned ${items.length} tracks (API limit). Filling to ${TARGET} for UI testing.`);
-        items = padToTarget(items, TARGET);
-      }
-      break;
-    }
-    url = data.next;
+    items = items.concat(data.items || []);
+    url   = data.next || null;
   }
 
-  return items.slice(0, TARGET);
-}
-
-// Repeats the real tracks with older timestamps to reach the target count.
-function padToTarget(realItems, target) {
-  const result = [...realItems];
-  let   copy   = 0;
-
-  while (result.length < target) {
-    const src = realItems[copy % realItems.length];
-    // Shift timestamp back by (copy+1) days so dates look realistic
-    const shiftedDate = new Date(new Date(src.played_at).getTime() - (Math.floor(copy / realItems.length) + 1) * 86400000);
-    result.push({ ...src, played_at: shiftedDate.toISOString(), _padded: true });
-    copy++;
-  }
-
-  return result;
-}
-
-function updateLoadingMessage(loaded) {
-  const body = document.getElementById('tracks-body');
-  if (body) body.innerHTML = `
-    <div class="history-loading">
-      <div class="history-spinner"></div>
-      Loading your listening history… ${loaded > 0 ? `(${loaded} tracks so far)` : ''}
-    </div>`;
+  return items;
 }
 
 // ── Date helpers ──────────────────────────────────────────────
@@ -143,8 +104,14 @@ function applyFilters() {
     const artist = item.track.artists.map(a => a.name).join(', ').toLowerCase();
     const inRange  = isInRange(item.played_at, activeRange);
     const inSearch = !q || name.includes(q) || artist.includes(q);
-    const mood     = corrections[item.track.id] || 'undefined';
+
+    const id       = item.track.id;
+    const corrMood = corrections[id];
+    const aiResult = analysisCache[id];
+    const aiMood   = aiResult?.mood ? aiResult.mood.toLowerCase() : null;
+    const mood     = corrMood || aiMood || 'undefined';
     const inMood   = activeMood === 'all' || mood === activeMood.toLowerCase();
+
     return inRange && inSearch && inMood;
   });
   currentPage = 1;
@@ -161,6 +128,7 @@ function render() {
     body.innerHTML = `<div class="history-empty">No tracks found for the selected filters.</div>`;
     count.textContent = '';
     pag.innerHTML = '';
+    updateAnalysisStatus(0);
     return;
   }
 
@@ -173,7 +141,6 @@ function render() {
 
   body.innerHTML = page.map((item, idx) => buildRow(item, start + idx + 1)).join('');
 
-  // Re-open previously expanded row if still visible
   if (openRow) {
     const panel = document.getElementById(`panel-${openRow}`);
     if (panel) panel.classList.add('open');
@@ -181,10 +148,23 @@ function render() {
 
   renderPagination(total);
   bindRowEvents();
+
+  // Trigger analysis for any unanalyzed tracks on this page
+  const needsAnalysis = page.filter(
+    item => !analysisCache[item.track.id] && !analyzingSet.has(item.track.id)
+  );
+  if (needsAnalysis.length > 0) {
+    analyzeCurrentPage(needsAnalysis);
+  }
+
+  // Update status indicator
+  updateAnalysisStatus(analyzingSet.size);
 }
 
 function moodTagHtml(mood) {
-  const label = mood === 'undefined' ? 'Undefined' : mood.charAt(0).toUpperCase() + mood.slice(1);
+  const label = mood === 'undefined'  ? 'Undefined'
+              : mood === 'analyzing'  ? '…'
+              : mood.charAt(0).toUpperCase() + mood.slice(1);
   return `<span class="mood-tag ${mood}">${label}</span>`;
 }
 
@@ -195,10 +175,35 @@ function buildRow(item, num) {
   const name    = track.name;
   const artist  = track.artists.map(a => a.name).join(', ');
   const played  = formatPlayedAt(item.played_at);
-  const mood    = corrections[id] || 'undefined';
+
+  const corrMood    = corrections[id];
+  const aiResult    = analysisCache[id];
+  const isAnalyzing = analyzingSet.has(id);
+  const aiMood      = aiResult?.mood ? aiResult.mood.toLowerCase() : null;
+
+  // mood shown in the row: user correction > AI > analyzing placeholder > undefined
+  const displayMood = corrMood
+    || (isAnalyzing ? 'analyzing' : (aiMood || 'undefined'));
+
+  // confidence
+  const confPct   = aiResult?.confidence != null
+    ? Math.round(aiResult.confidence * 100)
+    : null;
+  const confWidth = confPct != null ? `${confPct}%` : '0%';
+
   const corrVal = corrections[id]
     ? `${moodTagHtml(corrections[id])}<span class="corr-check">✓</span>`
     : `<span class="corr-value">—</span>`;
+
+  const confCell = isAnalyzing
+    ? `<div class="conf-cell"><span class="conf-pct">…</span></div>`
+    : `<div class="conf-cell">
+        <div class="conf-bar-bg"><div class="conf-bar-fill" style="width:${confWidth}"></div></div>
+        <span class="conf-pct">${confPct != null ? confPct + '%' : '—'}</span>
+       </div>`;
+
+  // AI mood shown in correction panel (always the raw prediction, not the correction)
+  const aiPanelMood = isAnalyzing ? 'analyzing' : (aiMood || 'undefined');
 
   return `
   <div class="track-row-wrap" id="wrap-${id}">
@@ -210,11 +215,8 @@ function buildRow(item, num) {
       </div>
       <span class="track-artist" title="${escHtml(artist)}">${escHtml(artist)}</span>
       <span class="track-played">${played}</span>
-      ${moodTagHtml(mood)}
-      <div class="conf-cell">
-        <div class="conf-bar-bg"><div class="conf-bar-fill" style="width:100%"></div></div>
-        <span class="conf-pct">100%</span>
-      </div>
+      ${moodTagHtml(displayMood)}
+      ${confCell}
       <div class="corr-cell">
         ${corrVal}
         <button class="pencil-btn${openRow === id ? ' active' : ''}" data-id="${id}" title="Correct mood">
@@ -227,7 +229,7 @@ function buildRow(item, num) {
     <div class="correction-panel${openRow === id ? ' open' : ''}" id="panel-${id}" data-id="${id}">
       <div class="corr-ai-row">
         <span>AI prediction:</span>
-        ${moodTagHtml(mood)}
+        ${moodTagHtml(aiPanelMood)}
         <span>· What mood do you feel this track is?</span>
       </div>
       <div class="corr-mood-options">
@@ -250,9 +252,70 @@ function escHtml(str) {
   return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// ── Analysis status banner ────────────────────────────────────
+function updateAnalysisStatus(count) {
+  const el = document.getElementById('analysis-status');
+  if (!el) return;
+  if (count > 0) {
+    el.textContent = `Analyzing ${count} track${count === 1 ? '' : 's'}…`;
+    el.classList.remove('hidden');
+  } else {
+    el.classList.add('hidden');
+  }
+}
+
+// ── ML batch analysis ─────────────────────────────────────────
+async function analyzeCurrentPage(tracks) {
+  if (!tracks.length) return;
+
+  const user = (() => {
+    try { return JSON.parse(localStorage.getItem('emotify_user')); } catch { return null; }
+  })();
+
+  tracks.forEach(item => analyzingSet.add(item.track.id));
+  updateAnalysisStatus(analyzingSet.size);
+  // Re-render to show "…" placeholders (avoids full render if correction panel open)
+  document.querySelectorAll('.mood-tag').forEach(el => {
+    const wrap = el.closest('.track-row-wrap');
+    if (!wrap) return;
+    const id = wrap.id.replace('wrap-', '');
+    if (analyzingSet.has(id) && !el.closest('.correction-panel')) {
+      el.className = 'mood-tag analyzing';
+      el.textContent = '…';
+    }
+  });
+
+  const payload = {
+    token:  user?.access_token || null,
+    tracks: tracks.map(item => ({
+      id:          item.track.id,
+      name:        item.track.name,
+      artist:      item.track.artists[0]?.name || '',
+      preview_url: item.track.preview_url || null,
+    })),
+  };
+
+  try {
+    const res = await fetch(`${ML_API}/api/analyze/batch`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      Object.assign(analysisCache, data.results || {});
+    }
+  } catch (e) {
+    console.warn('[Emotify] ML service unavailable:', e.message);
+  } finally {
+    tracks.forEach(item => analyzingSet.delete(item.track.id));
+    render();
+  }
+}
+
 // ── Row interactions ──────────────────────────────────────────
 function bindRowEvents() {
-  // Pencil buttons — toggle correction panel
   document.querySelectorAll('.pencil-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.dataset.id;
@@ -261,23 +324,18 @@ function bindRowEvents() {
     });
   });
 
-  // Mood selection inside correction panel
   document.querySelectorAll('.corr-mood-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const id   = btn.dataset.track;
       const mood = btn.dataset.mood;
-      // Optimistic — just visually mark selected, don't save yet
       document.querySelectorAll(`[data-track="${id}"].corr-mood-btn`).forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
-      // Enable save button
       const saveBtn = document.querySelector(`.btn-save-corr[data-track="${id}"]`);
       if (saveBtn) saveBtn.disabled = false;
-      // Store pending selection temporarily on the element
       btn.closest('.correction-panel').dataset.pending = mood;
     });
   });
 
-  // Save correction
   document.querySelectorAll('.btn-save-corr').forEach(btn => {
     btn.addEventListener('click', () => {
       const id      = btn.dataset.track;
@@ -290,7 +348,6 @@ function bindRowEvents() {
     });
   });
 
-  // Clear correction
   document.querySelectorAll('.btn-clear-corr').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.dataset.track;
@@ -346,13 +403,33 @@ function renderError(msg) {
 
 // ── Export CSV ────────────────────────────────────────────────
 function exportCSV() {
-  const rows = [['#', 'Title', 'Artist', 'Played at', 'Mood', 'Confidence', 'Correction']];
+  const rows = [['#', 'Title', 'Artist', 'Played at', 'Mood', 'Confidence', 'Correction', 'Spotify Track ID']];
+
   filtered.forEach((item, i) => {
-    const t    = item.track;
-    const mood = corrections[t.id] || 'Undefined';
-    const corr = corrections[t.id] ? mood : '—';
-    rows.push([i + 1, t.name, t.artists.map(a => a.name).join(', '), item.played_at, 'Undefined', '100%', corr]);
+    const t      = item.track;
+    const aiRes  = analysisCache[t.id];
+    const aiMood = aiRes?.mood || 'Undefined';
+    const corrMood = corrections[t.id];
+    const mood   = corrMood
+      ? corrMood.charAt(0).toUpperCase() + corrMood.slice(1)
+      : aiMood;
+    const corr   = corrMood ? mood : '—';
+    const conf   = aiRes?.confidence != null
+      ? Math.round(aiRes.confidence * 100) + '%'
+      : '—';
+
+    rows.push([
+      i + 1,
+      t.name,
+      t.artists.map(a => a.name).join(', '),
+      item.played_at,
+      mood,
+      conf,
+      corr,
+      t.id,
+    ]);
   });
+
   const csv  = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const url  = URL.createObjectURL(blob);
@@ -365,19 +442,16 @@ function exportCSV() {
 document.addEventListener('DOMContentLoaded', () => {
   if (!guardAuth()) return;
 
-  // Populate user data in header
   const user = (() => { try { return JSON.parse(localStorage.getItem('emotify_user')); } catch { return null; } })();
   if (user) {
     document.querySelectorAll('.logged-in-label').forEach(el => el.textContent = `Logged in as ${user.name}`);
     document.querySelectorAll('.dynamic-avatar').forEach(img => { if (user.avatar) img.src = user.avatar; });
   }
 
-  // Logged-in badge → /login
   document.querySelectorAll('.btn-logged-in').forEach(btn => {
     btn.addEventListener('click', () => { window.location.href = '/login'; });
   });
 
-  // Time filter
   document.querySelectorAll('.time-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
@@ -387,7 +461,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Mood filter
   document.querySelectorAll('.mood-filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.mood-filter-btn').forEach(b => b.classList.remove('active'));
@@ -397,20 +470,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Search
   document.getElementById('search-input').addEventListener('input', e => {
     searchQuery = e.target.value;
     applyFilters();
   });
 
-  // Sort
   document.getElementById('sort-select').addEventListener('change', e => {
     if (e.target.value === 'oldest') allTracks.reverse();
     else allTracks.sort((a, b) => new Date(b.played_at) - new Date(a.played_at));
     applyFilters();
   });
 
-  // Clear filters
   document.getElementById('clear-filters').addEventListener('click', () => {
     activeMood  = 'all';
     activeRange = '7';
@@ -421,7 +491,6 @@ document.addEventListener('DOMContentLoaded', () => {
     applyFilters();
   });
 
-  // Export CSV
   document.getElementById('btn-export').addEventListener('click', exportCSV);
 
   loadHistory();
